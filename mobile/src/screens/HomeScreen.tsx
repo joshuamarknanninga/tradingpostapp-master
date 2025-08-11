@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Pressable } from "react-native";
 import { fetchItems } from "../services/itemService";
 import { fetchShops } from "../services/shopService";
 import XPBar from "../components/XPBar";
@@ -21,36 +21,35 @@ export default function HomeScreen({ navigation }: Props) {
   const [level, setLevel] = useState(0);
   const [popupVisible, setPopupVisible] = useState(false);
   const confettiRef = useRef<any>(null);
+  const tapCount = useRef(0);
 
   useEffect(() => {
     fetchItems().then(setItems);
     fetchShops().then(setShops);
 
     api.post("/xp/login-streak", {}, { headers: { Authorization: "Bearer USER_TOKEN" } })
-      .then((res) => {
-        setStreak(res.data.count);
-        api.get("/auth/me", { headers: { Authorization: "Bearer USER_TOKEN" } })
-          .then((userRes) => {
-            const newXp = userRes.data.xp;
-            const newLevel = Math.floor(newXp / 100);
+    .then((res) => {
+      setStreak(res.data.count);
+      api.get("/auth/me", { headers: { Authorization: "Bearer USER_TOKEN" } })
+        .then((userRes) => {
+          const newXp = userRes.data.xp;
+          const newLevel = Math.floor(newXp / 100);
 
-            // Streak milestone celebration
-            if ([3, 7, 30].includes(res.data.count)) {
-              triggerCelebration();
-            }
+          if ([3, 7, 30].includes(res.data.count)) {
+            triggerCelebration();
+          }
 
-            // Level-up detection
-            if (newLevel > level) {
-              setLevel(newLevel);
-              setPopupVisible(true);
-              triggerCelebration();
-              playSound();
-            }
+          if (newLevel > level) {
+            setLevel(newLevel);
+            setPopupVisible(true);
+            triggerCelebration();
+            playSound();
+          }
 
-            setXp(newXp);
-          });
-      });
-  }, []);
+          setXp(newXp);
+        });
+    });
+}, []);
 
   const triggerCelebration = () => {
     confettiRef.current?.start();
@@ -61,9 +60,25 @@ export default function HomeScreen({ navigation }: Props) {
     await sound.playAsync();
   };
 
+  const boostXP = async () => {
+    await api.post("/xp/gain-demo", { amount: 150 }, { headers: { Authorization: "Bearer USER_TOKEN" } });
+    api.get("/auth/me", { headers: { Authorization: "Bearer USER_TOKEN" } })
+      .then((res) => setXp(res.data.xp));
+  };
+
+  const handleSecretTap = () => {
+    tapCount.current += 1;
+    if (tapCount.current >= 5) {
+      boostXP();
+      tapCount.current = 0;
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <StreakBadge count={streak} />
+      <Pressable onPress={handleSecretTap}>
+        <StreakBadge count={streak} />
+      </Pressable>
       <XPBar xp={xp} />
 
       <Text style={styles.header}>Items</Text>
@@ -78,11 +93,14 @@ export default function HomeScreen({ navigation }: Props) {
         )}
       />
 
-      <Text style={styles.header}>Shops</Text>
+<Text style={styles.header}>Shops</Text>
       {shops.map((shop) => (
         <TouchableOpacity
           key={shop._id}
-          onPress={() => navigation.navigate("Shop", { shopId: shop._id, name: shop.name })}
+          onPress={() => {
+            navigation.navigate("Shop", { shopId: shop._id, name: shop.name });
+            api.post("/xp/gain-demo", { amount: 15 }, { headers: { Authorization: "Bearer USER_TOKEN" } });
+          }}
         >
           <Text style={styles.shop}>{shop.name}</Text>
         </TouchableOpacity>
