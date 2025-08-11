@@ -31,6 +31,10 @@ export default function ChatScreen({ route }: Props) {
     setText("");
   };
 
+  // Gain XP for chatting
+  api.post("/xp/gain-demo", { amount: 20 }, { headers: { Authorization: "Bearer USER_TOKEN" } })
+    .then((res) => console.log("XP after chat:", res.data.xp));
+    
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Chat with {name}</Text>

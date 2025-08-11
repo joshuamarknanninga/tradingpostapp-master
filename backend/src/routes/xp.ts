@@ -33,6 +33,17 @@ router.post("/login-streak", protect, async (req, res) => {
     await streak.save();
   }
 
+  router.post("/gain-demo", protect, async (req, res) => {
+    const { amount } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+  
+    user.xp += amount || 50; // default +50 XP
+    await user.save();
+  
+    res.json({ xp: user.xp });
+  });
+  
   await User.findByIdAndUpdate(req.user.id, { $inc: { xp: 5 } }); // small XP boost for login
   res.json(streak);
 });

@@ -11,9 +11,13 @@ export default function ShopScreen({ route }: Props) {
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
+    api.post("/xp/gain-demo", { amount: 15 }, { headers: { Authorization: "Bearer USER_TOKEN" } })
+    .then((res) => console.log("XP after visiting shop:", res.data.xp));
+    
     api.get(`/items`).then((res) => {
       setItems(res.data.filter((item: any) => item.owner?._id === shopId));
     });
+
   }, [shopId]);
 
   return (
