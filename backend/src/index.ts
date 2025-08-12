@@ -41,5 +41,5 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => console.log("User disconnected"));
 });
 
-server.listen(5000, () => console.log("Server running on http://localhost:5000"));
+server.listen(3001, () => console.log("Server running on http://localhost:3001"));
 
