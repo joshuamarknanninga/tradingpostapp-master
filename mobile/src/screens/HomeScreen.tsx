@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Pressable, Platform, ScrollView } from "react-native";
 import { fetchItems } from "../services/itemService";
 import { fetchShops } from "../services/shopService";
 import XPBar from "../components/XPBar";
@@ -11,6 +11,7 @@ import { RootStackParamList } from "../../App";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
+import { Helmet } from "react-helmet";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 
@@ -77,35 +78,55 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={handleSecretTap}>
-        <StreakBadge count={streak} />
-      </Pressable>
-      <XPBar xp={xp} />
+      {Platform.OS === "web" && (
+        <Helmet>
+          <title>Home — The Trading Post</title>
+        </Helmet>
+      )}
 
-      <Text style={styles.header}>Items</Text>
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text>{item.title}</Text>
-            <Text>${item.price}</Text>
-          </View>
-        )}
-      />
+      <ScrollView>
+        <Pressable onPress={handleSecretTap}>
+          <StreakBadge count={streak} />
+        </Pressable>
+        <XPBar xp={xp} />
 
-      <Text style={styles.header}>Shops</Text>
-      {shops.map((shop) => (
-        <TouchableOpacity
-          key={shop._id}
-          onPress={() => {
-            navigation.navigate("Shop", { shopId: shop._id, name: shop.name });
-            api.post("/xp/gain-demo", { amount: 15 }, { headers: { Authorization: "Bearer USER_TOKEN" } });
-          }}
-        >
-          <Text style={styles.shop}>{shop.name}</Text>
-        </TouchableOpacity>
-      ))}
+        <Text style={styles.header}>Quick Actions</Text>
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate("AddItem")}>
+            <Ionicons name="add-circle-outline" size={20} color="#fff" />
+            <Text style={styles.actionText}>Add Item</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => boostXP()}>
+            <Ionicons name="flash-outline" size={20} color="#fff" />
+            <Text style={styles.actionText}>Boost XP</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.header}>Items</Text>
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text>{item.title}</Text>
+              <Text>${item.price}</Text>
+            </View>
+          )}
+        />
+
+        <Text style={styles.header}>Shops</Text>
+        {shops.map((shop) => (
+          <TouchableOpacity
+            key={shop._id}
+            onPress={() => {
+              navigation.navigate("Shop", { shopId: shop._id, name: shop.name });
+              api.post("/xp/gain-demo", { amount: 15 }, { headers: { Authorization: "Bearer USER_TOKEN" } });
+            }}
+          >
+            <Text style={styles.shop}>{shop.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {/* Floating Add Item Button */}
       <TouchableOpacity
@@ -141,5 +162,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 2 }
-  }
+  },
+  actions: { flexDirection: "row", gap: 10, marginBottom: 15 },
+  actionBtn: {
+    flexDirection: "row",
+    backgroundColor: "#4cafef",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+    gap: 6
+  },
+  actionText: { color: "#fff", fontWeight: "bold" }
 });
